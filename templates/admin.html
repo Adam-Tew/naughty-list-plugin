@@ -1,0 +1,89 @@
+{% extends "admin/base.html" %}
+
+{% block content %}
+<div class="jumbotron">
+  <div class="container">
+    <h1>Naughty List</h1>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <div class="col-md-5 mb-4">
+      <h4>Add to the list</h4>
+      <form method="POST" action="{{ url_for('naughty_list.admin_add') }}">
+        <input type="hidden" name="nonce" value="{{ Session.nonce }}">
+        <div class="mb-3">
+          <label class="form-label" for="target"><b>Who</b></label>
+          <select class="form-select" id="target" name="target" required>
+            {% if teams %}
+            <optgroup label="Teams">
+              {% for t in teams %}<option value="team:{{ t.id }}">{{ t.name }}</option>{% endfor %}
+            </optgroup>
+            {% endif %}
+            <optgroup label="Players">
+              {% for u in users %}<option value="user:{{ u.id }}">{{ u.name }}{% if u.team %} ({{ u.team.name }}){% endif %}</option>{% endfor %}
+            </optgroup>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="reason"><b>What they did</b></label>
+          <textarea class="form-control" id="reason" name="reason" rows="3" required
+                    placeholder="e.g. Shared flags with another team"></textarea>
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="action"><b>Verdict</b></label>
+          <select class="form-select" id="action" name="action">
+            <option value="warning">Warning</option>
+            <option value="ban">Ban (also bans the account in CTFd)</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="notify"><b>Notify</b></label>
+          <select class="form-select" id="notify" name="notify">
+            <option value="team" selected>Only the team concerned (or the player, if they have no team)</option>
+            <option value="everyone">Everyone (also pops up live for everyone)</option>
+            <option value="none">Nobody</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Add to the Naughty List</button>
+      </form>
+    </div>
+
+    <div class="col-md-7">
+      <h4>On the list</h4>
+      {% if not entries %}
+        <p class="text-muted">Nobody yet.</p>
+      {% endif %}
+      <table class="table table-striped">
+        {% if entries %}
+        <thead><tr><th>Who</th><th>What they did</th><th>Verdict</th><th>Date</th><th></th></tr></thead>
+        {% endif %}
+        <tbody>
+        {% for e in entries %}
+          <tr>
+            <td><b>{{ e.name }}</b><br><small class="text-muted">{{ 'team' if e.team_id else 'player' }}</small></td>
+            <td style="white-space: pre-line">{{ e.reason }}</td>
+            <td>
+              {% if e.action == 'ban' %}<span class="badge bg-danger">Banned</span>
+              {% else %}<span class="badge bg-warning text-dark">Warning</span>{% endif %}
+            </td>
+            <td><small>{{ e.date.strftime('%Y-%m-%d %H:%M') }} UTC</small></td>
+            <td>
+              <form method="POST" action="{{ url_for('naughty_list.admin_delete', entry_id=e.id) }}"
+                    onsubmit="return confirm('Remove {{ e.name|e }} from the Naughty List?{% if e.action == 'ban' %} This also lifts the ban.{% endif %}');">
+                <input type="hidden" name="nonce" value="{{ Session.nonce }}">
+                <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      <p class="small text-muted">
+        Removing an entry also removes its notification, and lifts the ban if it was the only ban for that account.
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}

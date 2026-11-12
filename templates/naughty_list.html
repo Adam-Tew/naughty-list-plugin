@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{# Plain fallback page, used when the active theme has no naughty_list.html of its own #}
+{% block content %}
+<div class="jumbotron"><div class="container"><h1>Naughty List</h1></div></div>
+<div class="container">
+  {% for e in entries %}
+    <div class="card mb-3"><div class="card-body">
+      <h5 class="card-title">{{ e.name }}
+        <span class="badge {{ 'bg-danger' if e.action == 'ban' else 'bg-warning text-dark' }}">{{ 'Banned' if e.action == 'ban' else 'Warning' }}</span>
+      </h5>
+      <p class="card-text" style="white-space: pre-line">{{ e.reason }}</p>
+    </div></div>
+  {% else %}
+    <p class="text-center">Nobody is on the Naughty List.</p>
+  {% endfor %}
+</div>
+{% endblock %}
